@@ -1,24 +1,84 @@
-import "./style.css";
+import "./../styles/main.scss";
+import { addTodo, changeTodo, removeAllTodos } from "../ts/functions";
+import { Todo } from "./models/todo";
 
-import { Todo } from "../models/Todo";
+let todos: Todo[] = JSON.parse(localStorage.getItem("todos") || "[]");
 
-export const add = (x: number, y: number) => {
-  return x + y;
-};
+document.getElementById("clearTodos")?.addEventListener("click", () => {
+  clearTodos(todos);
+});
 
-const todos: Todo[] = [];
+(document.getElementById("newTodoForm") as HTMLFormElement)?.addEventListener(
+  "submit",
+  (e: SubmitEvent) => {
+    e.preventDefault();
 
-export const addTodo = (theTask: string, theList: Todo[]) => {
-  if (theTask.length > 0) {
-    const newTodo = new Todo(theTask, false);
-    theList.push(newTodo);
-  } else {
-    console.log("Detta får inte hända");
+    let todoText: string = (
+      document.getElementById("newTodoText") as HTMLInputElement
+    ).value;
+
+    createNewTodo(todoText, todos);
   }
-};
+);
 
-export const toggleTodo = (i: number, theList: Todo[]) => {
-  theList[i].isDone = !theList[i].isDone;
-};
+function createNewTodo(todoText: string, todos: Todo[]) {
+  let result = addTodo(todoText, todos);
 
-addTodo("Test", todos);
+  if (result.success) {
+    createHtml(todos);
+  } else {
+    displayError(result.error, true);
+  }
+}
+
+function createHtml(todos: Todo[]) {
+  localStorage.setItem("todos", JSON.stringify(todos));
+
+  let todosContainer: HTMLUListElement = document.getElementById(
+    "todos"
+  ) as HTMLUListElement;
+
+  todosContainer.innerHTML = "";
+
+  for (let i = 0; i < todos.length; i++) {
+    let li: HTMLLIElement = document.createElement("li");
+
+    if (todos[i].done) {
+      li.classList.add("todo__text--done");
+    }
+
+    li.classList.add("todo__text");
+    li.innerHTML = todos[i].text;
+    li.addEventListener("click", () => {
+      toggleTodo(todos[i]);
+    });
+
+    todosContainer.appendChild(li);
+  }
+}
+
+function toggleTodo(todo: Todo) {
+  changeTodo(todo);
+  createHtml(todos);
+}
+
+function displayError(error: string, show: boolean) {
+  let errorContainer: HTMLDivElement = document.getElementById(
+    "error"
+  ) as HTMLDivElement;
+
+  errorContainer.innerHTML = error;
+
+  if (show) {
+    errorContainer.classList.add("show");
+  } else {
+    errorContainer.classList.remove("show");
+  }
+}
+
+function clearTodos(todos: Todo[]) {
+  removeAllTodos(todos);
+  createHtml(todos);
+}
+
+createHtml(todos);
